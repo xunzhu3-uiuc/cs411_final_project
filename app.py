@@ -86,14 +86,14 @@ mongodb = MongoDB()
 def get_most_popular_keywords(num_top=20, by='num_citations'):
     if by == 'num_citations':
         return mysql.query(
-            """SELECT * FROM top_keywords_by_num_citation LIMIT :num_top;""",
+            """SELECT * FROM top_keywords_by_num_citations LIMIT :num_top;""",
             {
                 "num_top": num_top,
             },
         )
     elif by == 'num_publications':
         return mysql.query(
-            """SELECT * FROM top_keywords_by_num_citation LIMIT :num_top;""",
+            """SELECT * FROM top_keywords_by_num_publications LIMIT :num_top;""",
             {
                 "num_top": num_top,
             },
@@ -102,25 +102,24 @@ def get_most_popular_keywords(num_top=20, by='num_citations'):
         raise ValueError(f"{by=} not recognized.")
 
 
-# @app.callback(
-#     Output('figure_most_popular_keywords', 'figure'),
-#     [Input('radio_by_most_popular_keywords', 'value')],
-# )
-def make_figure_most_popular_keywords(num_top=20, by='num_citations'):
+@app.callback(
+    Output(component_id='figure_most_popular_keywords', component_property='figure'),
+    Input(component_id='radio_by_most_popular_keywords', component_property='value'),
+)
+def make_figure_most_popular_keywords(by='num_citations'):
     df = get_most_popular_keywords(by=by)
-    fig = px.bar(df, x="name", y=",otal_num_citations", height=400)
+    fig = px.bar(df, x="name", y="total_num_citations", height=300)
     return fig
 
 
 def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
     radio_by = dcc.RadioItems(
-        ['num_citations', 'num_publications'],
-        'num_citations',
         id='radio_by_most_popular_keywords',
+        options=['num_citations', 'num_publications'],
+        value='num_citations',
         inline=True,
     )
-    fig = make_figure_most_popular_keywords(num_top=num_top, by=by)
-    graph = dcc.Graph(id="figure_most_popular_keywords", figure=fig)
+    graph = dcc.Graph(id="figure_most_popular_keywords")
     widget = make_widget(
         title="Top keywords",
         subtitle="Keywords that have accumulated the most number of citations over all years",

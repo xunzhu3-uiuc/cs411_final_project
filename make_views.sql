@@ -1,6 +1,6 @@
 USE AcademicWorld;
 
-CREATE OR REPLACE VIEW top_keywords_by_num_citation                 AS
+CREATE OR REPLACE VIEW top_keywords_by_num_citations                 AS
 SELECT   RANK() OVER (ORDER BY total_num_citations DESC) AS rank,
          `name`,
          total_num_citations
@@ -17,7 +17,7 @@ FROM     (
                    HAVING    k.`name` IS NOT NULL) AS s
 ORDER BY total_num_citations DESC;
 
-CREATE OR REPLACE VIEW top_keywords_by_num_publication AS
+CREATE OR REPLACE VIEW top_keywords_by_num_publications AS
 SELECT   RANK() OVER (ORDER BY total_num_publications DESC) AS rank,
          `name`,
          total_num_publications
