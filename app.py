@@ -152,7 +152,7 @@ header = html.Div(
 )
 
 
-def widget(title="Untitled Widget", children=[]):
+def widget(title="<title>", subtitle="<subtitle>", children=[]):
     return dbc.Col(
         style={
             'display': 'flex',
@@ -163,7 +163,8 @@ def widget(title="Untitled Widget", children=[]):
         },
         width=4,
         children=[
-            html.H2(title),
+            html.H4(title),
+            html.P(subtitle),
             dbc.Card(
                 style={
                     'overflow': 'auto',
@@ -186,10 +187,14 @@ widgets = dbc.Row(
     },
     children=[
         widget(
+            title="Top keywords",
+            subtitle="Keywords that have accumulated the most number of citations over all years",
+            children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))],
+        ),
+        widget(
             title="Hello, World!",
             children=[dcc.Graph(id='example-graph-2', figure=fig)],
         ),
-        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
         widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
         widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
         widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
