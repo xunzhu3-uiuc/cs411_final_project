@@ -91,7 +91,7 @@ Extra-Credit Capabilities
 -------------------------
 
   - **Multi-database querying**
-  - **Data expansion**
+  - **Query caching**
 
 Contributions
 -------------

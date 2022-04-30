@@ -1,7 +1,7 @@
 # Run this app with `python app.py` and
 # visit http://127.0.0.1:8050/ in your web browser.
 
-from dash import Dash, dcc, html, dash_table
+from dash import Dash, dcc, html, dash_table, Input, Output
 import plotly.express as px
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -79,27 +79,54 @@ class MySQL:
 mysql = MySQL()
 neo4j = Neo4J()
 mongodb = MongoDB()
+", COUNT(DISTINCT p.id) AS total_num_publications"
 
 
 @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
-def get_most_popular_keywords(num_top=20):
-    df = mysql.query(
-        """
-SELECT RANK() over (ORDER BY total_num_citations DESC) AS rank, name, total_num_citations, total_num_publications
-FROM (SELECT p.id, SUM(p.num_citations) AS total_num_citations, COUNT(DISTINCT p.id) AS total_num_publications, k.name
-      FROM publication p
-               LEFT JOIN publication_keyword pk on p.id = pk.publication_id
-               LEFT JOIN keyword k on k.id = pk.keyword_id
-      GROUP BY k.name
-      HAVING k.name IS NOT NULL) AS S
-ORDER BY total_num_citations DESC
-LIMIT :num_top;
-        """,
-        {
-            "num_top": num_top,
-        },
+def get_most_popular_keywords(num_top=20, by='num_citations'):
+    if by == 'num_citations':
+        return mysql.query(
+            """SELECT * FROM top_keywords_by_num_citation LIMIT :num_top;""",
+            {
+                "num_top": num_top,
+            },
+        )
+    elif by == 'num_publications':
+        return mysql.query(
+            """SELECT * FROM top_keywords_by_num_citation LIMIT :num_top;""",
+            {
+                "num_top": num_top,
+            },
+        )
+    else:
+        raise ValueError(f"{by=} not recognized.")
+
+
+# @app.callback(
+#     Output('figure_most_popular_keywords', 'figure'),
+#     [Input('radio_by_most_popular_keywords', 'value')],
+# )
+def make_figure_most_popular_keywords(num_top=20, by='num_citations'):
+    df = get_most_popular_keywords(by=by)
+    fig = px.bar(df, x="name", y=",otal_num_citations", height=400)
+    return fig
+
+
+def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
+    radio_by = dcc.RadioItems(
+        ['num_citations', 'num_publications'],
+        'num_citations',
+        id='radio_by_most_popular_keywords',
+        inline=True,
     )
-    return dash_table.DataTable(*df_to_dash_data_table(df))
+    fig = make_figure_most_popular_keywords(num_top=num_top, by=by)
+    graph = dcc.Graph(id="figure_most_popular_keywords", figure=fig)
+    widget = make_widget(
+        title="Top keywords",
+        subtitle="Keywords that have accumulated the most number of citations over all years",
+        children=[radio_by, graph],
+    )
+    return widget
 
 
 df_neo4j = neo4j.query("MATCH (f:FACULTY) RETURN f.name AS name, f.email AS email LIMIT 10")
@@ -157,7 +184,7 @@ header = html.Div(
 )
 
 
-def widget(title="<title>", subtitle="<subtitle>", children=[]):
+def make_widget(title="<title>", subtitle="<subtitle>", children=[]):
     return dbc.Col(
         style={
             'display': 'flex',
@@ -191,19 +218,15 @@ widgets = dbc.Row(
         'overflow': 'auto',
     },
     children=[
-        widget(
-            title="Top keywords",
-            subtitle="Keywords that have accumulated the most number of citations over all years",
-            children=[get_most_popular_keywords()],
-        ),
-        widget(
+        make_widget_most_popular_keywords(),
+        make_widget(
             title="Hello, World!",
             children=[dcc.Graph(id='example-graph-2', figure=fig)],
         ),
-        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
     ]
 )
 
