@@ -4,9 +4,10 @@ Find your next research topic!
 Purpose
 -------
 
-This application is my fellow researchers who is struggling to find their next
-research topic. It gives you lots of tools to zero in just exactly what you want
-to work on for your next project.
+This application is for my fellow researchers who is struggling to find their next
+research topic. It gives you lots of tools to zero in just exactly which topic you want
+to work on for your next project. Along the way, you will also pin down who you will like to
+work with as collaborator, and which references papers you should read.
 
 Do you want to focus on a "hot" topic that might give you lots of citations?
 Do you have a particular collaborator that you want to work with?
