@@ -7,13 +7,7 @@ Purpose
 This application is for my fellow researchers who is struggling to find their next
 research topic. It gives you lots of tools to zero in just exactly which topic you want
 to work on for your next project. Along the way, you will also pin down who you will like to
-work with as collaborator, and which references papers you should read.
-
-Do you want to focus on a "hot" topic that might give you lots of citations?
-Do you have a particular collaborator that you want to work with?
-Or perhaps you want to write an review on a particular topic, but need to first gather all the recent papers?
-
-You will find tools to answer these questions in this nice application!
+work with as collaborators, and which references papers you should read.
 
 Demo
 ----
