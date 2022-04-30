@@ -7,67 +7,109 @@ import pandas as pd
 from sqlalchemy import create_engine, text
 from pymongo import MongoClient
 from neo4j import GraphDatabase
+from flask_caching import Cache
+import dash_bootstrap_components as dbc
+
+CACHE_TIMEOUT_SECONDS = 300
+
+app = Dash(
+    name=__name__,
+    external_stylesheets=[dbc.themes.BOOTSTRAP],
+)
+
+cache = Cache(
+    app.server,
+    config={
+        # try 'filesystem' if you don't want to setup redis
+        'CACHE_TYPE': 'FileSystemCache',
+        'CACHE_DIR': './cache/',
+    }
+)
+
+# app.config.suppress_callback_exceptions = True
 
 
 class Neo4J:
 
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def __init__(self):
         driver = GraphDatabase.driver("bolt://localhost:7687/academicworld", auth=("neo4j", "t817"))
         session = driver.session(database="academicworld")
         self._session = session
 
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def query(self, query_str):
         result = self._session.run(query_str)
         df = pd.DataFrame.from_records(result.data())
         return df
 
 
-neo4j = Neo4J()
-df_neo4j = neo4j.query("MATCH (f:FACULTY) RETURN f.name AS name, f.email AS email LIMIT 10")
-
-
 class MongoDB:
 
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def __init__(self):
         conn = MongoClient('mongodb://xzhu:t817@localhost:27017/academicworld?authSource=admin')
         self._db = conn['academicworld']
 
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def query(self, query_fn):
         cursor = query_fn(self._db)
         df = pd.DataFrame(list(cursor))
         return df
 
 
+class MySQL:
+
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
+    def __init__(self):
+        engine = create_engine("mysql+pymysql://xzhu:t817@localhost/AcademicWorld", echo=True, future=True)
+        conn = engine.connect()
+        self._conn = conn
+
+    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
+    def query(self, query_str, params=[]):
+        result = pd.read_sql(text(query_str), self._conn, params=params)
+        return result
+
+
+mysql = MySQL()
+neo4j = Neo4J()
 mongodb = MongoDB()
+
+
+@cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
+def get_most_popular_keywords(num_top=20):
+    return mysql.query(
+        """
+SELECT name, total_num_citations, total_num_publications
+FROM (SELECT p.id, SUM(p.num_citations) AS total_num_citations, COUNT(DISTINCT p.id) AS total_num_publications, k.name
+      FROM publication p
+               LEFT JOIN publication_keyword pk on p.id = pk.publication_id
+               LEFT JOIN keyword k on k.id = pk.keyword_id
+      GROUP BY k.name) AS S
+ORDER BY total_num_citations DESC
+LIMIT :num_top;""", [num_top]
+    )
+
+
+df_neo4j = neo4j.query("MATCH (f:FACULTY) RETURN f.name AS name, f.email AS email LIMIT 10")
+
 df_mongodb = mongodb.query(
     lambda db: db.faculty.
     aggregate([{"$match": {"position": "Assistant Professor"}}, {"$project": {"_id": 0, "name": 1, "email": 1, "phone": 1}}])
 )
 
 
-class MySQL:
-
-    def __init__(self):
-        engine = create_engine("mysql+pymysql://xzhu:t817@localhost/AcademicWorld", echo=True, future=True)
-        conn = engine.connect()
-        self._conn = conn
-
-    def query(self, query_str):
-        result = pd.read_sql(text(query_str), self._conn)
-        return result
-
-
-mysql = MySQL()
-df_mysql = mysql.query("SELECT * FROM faculty WHERE position = 'Assistant Professor'")
-
-
 def df_to_dash_data_table(df):
     return [df.to_dict('records'), [{"name": i, "id": i} for i in df.columns]]
 
 
-app = Dash(__name__)
-
-colors = {'background': '#111111', 'text': '#7FDBFF'}
+colors = {
+    'background': '#ffffff',
+    'background1': '#73e8ff',
+    'text': '#212121',
+    'text1': '#000000',
+}
 
 # assume you have a "long-form" data frame
 # see https://plotly.com/python/px-arguments/ for more options
@@ -80,18 +122,66 @@ df = pd.DataFrame(
 
 fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 
-fig.update_layout(plot_bgcolor=colors['background'], paper_bgcolor=colors['background'], font_color=colors['text'])
+fig.update_layout(
+    plot_bgcolor=colors['background'],
+    paper_bgcolor=colors['background'],
+    font_color=colors['text'],
+)
 
-app.layout = html.Div(
-    style={'backgroundColor': colors['background']},
+header = html.Div(
+    style={
+        'display': 'flex',
+        'flexDirection': 'column',
+    },
     children=[
-        html.H1(children='Hello Dash', style={'textAlign': 'center', 'color': colors['text']}),
-        html.Div(
-            children='Dash: A web application framework for your data.', style={'textAlign': 'center', 'color': colors['text']}
+        html.H1(
+            style={
+                # 'textAlign': 'center',
+                'color': colors['text'],
+            },
+            children='Research idea generator',
         ),
-        dcc.Graph(id='example-graph-2', figure=fig),
-        dash_table.DataTable(*df_to_dash_data_table(df_mongodb)),
-        # dash_table.DataTable(result.to_dict('records'), [{"name": i, "id": i} for i in result.columns])
+        html.Div(
+            style={
+                # 'textAlign': 'center',
+                'color': colors['text'],
+            },
+            children='Find your next research topic, collaborators, and references!',
+        ),
+    ]
+)
+
+
+def widget(children=[]):
+    return dbc.Col(
+        width=6,
+        children=children,
+    )
+
+
+placeholder_box = dbc.Col(
+    width=6,
+    children=["HELLO!"],
+)
+
+widgets = dbc.Row(
+    children=[
+        widget(children=[dcc.Graph(id='example-graph-2', figure=fig)]),
+        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        placeholder_box,
+        placeholder_box,
+        placeholder_box,
+        placeholder_box,
+    ]
+)
+
+app.layout = dbc.Col(
+    style={
+        'backgroundColor': colors['background1'],
+        'fontFamily': 'sans-serif',
+    }, children=[
+        header,
+        widgets,
     ]
 )
 
