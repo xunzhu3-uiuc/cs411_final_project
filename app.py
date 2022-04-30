@@ -152,10 +152,25 @@ header = html.Div(
 )
 
 
-def widget(children=[]):
+def widget(title="Untitled Widget", children=[]):
     return dbc.Col(
+        style={
+            'display': 'flex',
+            'flexDirection': 'column',
+            'overflow': 'hidden',
+            'height': '500px',
+            'padding': '16px',
+        },
         width=6,
-        children=children,
+        children=[
+            html.H2(title),
+            dbc.Card(
+                style={
+                    'overflow': 'auto',
+                },
+                children=children,
+            ),
+        ],
     )
 
 
@@ -179,7 +194,12 @@ app.layout = dbc.Col(
     style={
         'backgroundColor': colors['background1'],
         'fontFamily': 'sans-serif',
-    }, children=[
+        'padding': '16px',
+        'width': '100vw',
+        'height': '100vh',
+        'overflow': 'hidden',
+    },
+    children=[
         header,
         widgets,
     ]
