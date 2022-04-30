@@ -29,6 +29,10 @@ cache = Cache(
 # app.config.suppress_callback_exceptions = True
 
 
+def df_to_dash_data_table(df):
+    return [df.to_dict('records'), [{"name": i, "id": i} for i in df.columns]]
+
+
 class Neo4J:
 
     @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
@@ -79,17 +83,23 @@ mongodb = MongoDB()
 
 @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
 def get_most_popular_keywords(num_top=20):
-    return mysql.query(
+    df = mysql.query(
         """
-SELECT name, total_num_citations, total_num_publications
+SELECT RANK() over (ORDER BY total_num_citations DESC) AS rank, name, total_num_citations, total_num_publications
 FROM (SELECT p.id, SUM(p.num_citations) AS total_num_citations, COUNT(DISTINCT p.id) AS total_num_publications, k.name
       FROM publication p
                LEFT JOIN publication_keyword pk on p.id = pk.publication_id
                LEFT JOIN keyword k on k.id = pk.keyword_id
-      GROUP BY k.name) AS S
+      GROUP BY k.name
+      HAVING k.name IS NOT NULL) AS S
 ORDER BY total_num_citations DESC
-LIMIT :num_top;""", [num_top]
+LIMIT :num_top;
+        """,
+        {
+            "num_top": num_top,
+        },
     )
+    return dash_table.DataTable(*df_to_dash_data_table(df))
 
 
 df_neo4j = neo4j.query("MATCH (f:FACULTY) RETURN f.name AS name, f.email AS email LIMIT 10")
@@ -98,11 +108,6 @@ df_mongodb = mongodb.query(
     lambda db: db.faculty.
     aggregate([{"$match": {"position": "Assistant Professor"}}, {"$project": {"_id": 0, "name": 1, "email": 1, "phone": 1}}])
 )
-
-
-def df_to_dash_data_table(df):
-    return [df.to_dict('records'), [{"name": i, "id": i} for i in df.columns]]
-
 
 colors = {
     'background': '#ffffff',
@@ -189,7 +194,7 @@ widgets = dbc.Row(
         widget(
             title="Top keywords",
             subtitle="Keywords that have accumulated the most number of citations over all years",
-            children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))],
+            children=[get_most_popular_keywords()],
         ),
         widget(
             title="Hello, World!",
