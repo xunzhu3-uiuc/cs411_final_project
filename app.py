@@ -158,10 +158,10 @@ def widget(title="Untitled Widget", children=[]):
             'display': 'flex',
             'flexDirection': 'column',
             'overflow': 'hidden',
-            'height': '500px',
+            'height': '450px',
             'padding': '16px',
         },
-        width=6,
+        width=4,
         children=[
             html.H2(title),
             dbc.Card(
@@ -180,18 +180,27 @@ placeholder_box = dbc.Col(
 )
 
 widgets = dbc.Row(
+    style={
+        'flex': '1 0 0',
+        'overflow': 'auto',
+    },
     children=[
-        widget(children=[dcc.Graph(id='example-graph-2', figure=fig)]),
+        widget(
+            title="Hello, World!",
+            children=[dcc.Graph(id='example-graph-2', figure=fig)],
+        ),
         widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        placeholder_box,
-        placeholder_box,
-        placeholder_box,
-        placeholder_box,
+        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
     ]
 )
 
 app.layout = dbc.Col(
     style={
+        'display': 'flex',
+        'flexDirection': 'column',
         'backgroundColor': colors['background1'],
         'fontFamily': 'sans-serif',
         'padding': '16px',
