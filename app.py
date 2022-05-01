@@ -102,10 +102,13 @@ def query_most_popular_keywords(num_top=20, by='num_citations'):
 
 
 def make_stores():
-    return html.Div([
-        dcc.Store(id='current_keyword'),
-        dcc.Store(id='current_publication'),
-    ])
+    return html.Div(
+        [
+            dcc.Store(id='current_keyword'),
+            dcc.Store(id='current_publication'),
+            dcc.Store(id='current_researcher'),
+        ]
+    )
 
 
 def query_related_keywords(current_keyword):
@@ -165,9 +168,6 @@ def query_publications_for_keyword(current_keyword):
         return None
     else:
         return res
-        # df = pd.DataFrame(res)
-        # df['keywords'] = df['keywords'].apply(lambda x: str(x))
-        # return df
 
 
 def query_researchers_for_keyword(current_keyword):
@@ -178,10 +178,20 @@ def query_researchers_for_keyword(current_keyword):
                     "$match": {"keywords.name": current_keyword},
                 },
                 {
+                    "$unwind": "$keywords",
+                },
+                {
+                    "$match": {"keywords.name": current_keyword},
+                },
+                {
                     "$project": {"_id": 0},
                 },
-                # {"$sort": {"numCitations": -1}},
-                {"$limit": 20},
+                {
+                    "$sort": {"keywords.score": -1},
+                },
+                {
+                    "$limit": 20,
+                },
             ]
         )
     )
@@ -189,11 +199,7 @@ def query_researchers_for_keyword(current_keyword):
     if len(res) == 0:
         return None
     else:
-        df = pd.DataFrame(res)
-        df['affiliation'] = df['affiliation'].apply(lambda x: str(x))
-        df['publications'] = df['publications'].apply(lambda x: str(x))
-        df['keywords'] = df['keywords'].apply(lambda x: str(x))
-        return df
+        return res
 
 
 def get_publication_by_id(publication_id):
@@ -236,7 +242,23 @@ def get_current_publication_list_from_backend():
         return res
 
 
-def get_faculty_by_id(faculty_id):
+def get_current_researcher_list_from_backend():
+    res = mongodb.query(
+        lambda db: db.researcher_list.
+        aggregate([
+            {
+                "$project": {"_id": 0, "keywords": 0, "affiliation": 0, "publications": 0},
+            },
+        ])
+    )
+
+    if len(res) == 0:
+        return None
+    else:
+        return res
+
+
+def get_researcher_by_id(faculty_id):
     res = mongodb.query(
         lambda db: db.faculty.aggregate([
             {
@@ -270,23 +292,6 @@ def get_faculty_by_id(faculty_id):
 #         return outputs
 #     else:
 #         return [[], []]
-
-
-@app.callback(
-    [
-        Output('researchers_for_keyword', 'data'),
-        Output('researchers_for_keyword', 'columns'),
-    ],
-    Input('current_keyword', 'data'),
-)
-def update_researchers_for_keyword(current_keyword):
-    df = query_researchers_for_keyword(current_keyword)
-
-    if df is not None:
-        outputs = df_to_dash_data_table(df)
-        return outputs
-    else:
-        return [[], []]
 
 
 @app.callback(
@@ -332,14 +337,19 @@ def display_click_data(data1, data2):
     return label or "algorithms"
 
 
-@app.callback(Output('info_text', 'children'), [
-    Input('current_keyword', 'data'),
-    Input('current_publication', 'data'),
-])
-def update_info_text(current_keyword, current_publication):
+@app.callback(
+    Output('info_text', 'children'),
+    [
+        Input('current_keyword', 'data'),
+        Input('current_publication', 'data'),
+        Input('current_researcher', 'data'),
+    ],
+)
+def update_info_text(current_keyword, current_publication, current_researcher):
     msg = '\n'.join([
         f"{current_keyword=}",
         f"{current_publication=}",
+        f"{current_researcher=}",
     ])
     return msg
 
@@ -358,6 +368,19 @@ def update_related_keywords(current_keyword):
     Input({'type': 'publication_add_to_list_button', 'index': ALL}, 'n_clicks'),
 )
 def update_by_publication_add_to_list_button(n_clicks):
+    try:
+        triggered = dash.callback_context.triggered[0]
+        id_str = json.loads(triggered['prop_id'].split(".")[0])["index"]
+    except Exception:
+        id_str = None
+    return id_str
+
+
+@app.callback(
+    Output('current_researcher', 'data'),
+    Input({'type': 'researcher_add_to_list_button', 'index': ALL}, 'n_clicks'),
+)
+def update_by_researcher_add_to_list_button(n_clicks):
     try:
         triggered = dash.callback_context.triggered[0]
         id_str = json.loads(triggered['prop_id'].split(".")[0])["index"]
@@ -392,6 +415,32 @@ def update_publication_list(current_publication, n_clicks):
     return publication_list_data
 
 
+@app.callback(
+    Output('researcher_list', 'data'),
+    [
+        Input('current_researcher', 'data'),
+        Input('button_delete_all_researchers', 'n_clicks'),
+    ],
+)
+def update_researcher_list(current_researcher, n_clicks):
+    print(f"{current_researcher=}")
+    triggered = dash.callback_context.triggered[0]
+    print(f"{triggered=}")
+
+    if triggered['prop_id'] == 'button_delete_all_researchers.n_clicks':
+        res = mongodb.query(lambda db: db.researcher_list.delete_many({}))
+    elif current_researcher is not None and triggered is not None:
+        researcher = get_researcher_by_id(current_researcher)
+        print(researcher)
+        res = mongodb.query(lambda db: db.researcher_list.insert_one(researcher))
+        print(f"{res=}")
+
+    researcher_list_data = get_current_researcher_list_from_backend()
+    print(f"{researcher_list_data=}")
+
+    return researcher_list_data
+
+
 # @app.callback(
 #     Output('selected_publication', 'data'),
 #     Input('publications_for_keyword', 'active_cell'),
@@ -413,25 +462,6 @@ def update_top_publications_widget(current_keyword):
     else:
         children = []
         for pub in publications:
-            # pub = {
-            #     'id': 2109184569,
-            #     'title': 'PHENIX: building new software for automated crystallographic structure determination',
-            #     'venue': 'Acta Crystallographica Section D-biological Crystallography',
-            #     'year': 2002,
-            #     'numCitations': 4227,
-            #     'keywords':
-            #         [
-            #             {'id': 199, 'name': 'algorithms', 'score': 0.00218301},
-            #             {'id': 1198, 'name': 'databases', 'score': 0.00861767},
-            #             {'id': 2841, 'name': 'challenges', 'score': 0.00203716},
-            #             {'id': 2871, 'name': 'python', 'score': 0.186769},
-            #             {'id': 6354, 'name': 'genomics', 'score': 0.347225},
-            #             {'id': 8370, 'name': 'protein', 'score': 0.0038914},
-            #             {'id': 11437, 'name': 'expert', 'score': 0.0861387},
-            #             {'id': 19259, 'name': 'projects', 'score': 0.00321668},
-            #             {'id': 28214, 'name': 'software package', 'score': 0.226737},
-            #         ],
-            # }
             pub_id = pub["id"]
 
             if pub['venue'] is None:
@@ -491,6 +521,121 @@ def update_top_publications_widget(current_keyword):
                                             id={
                                                 'type': 'publication_add_to_list_button',
                                                 'index': pub_id,
+                                            },
+                                            color='primary',
+                                            children='Add to list',
+                                        ),
+                                    ],
+                                ),
+                            ]
+                        )
+                    ]
+                )
+            )
+        return html.Div(
+            style={
+                'width': '100%',
+                'display': 'flex',
+                'flexDirection': 'row',
+                'margin': '16px',
+                'gap': '16px',
+            },
+            children=children,
+        )
+
+
+@app.callback(
+    Output('top_researchers_widget', 'children'),
+    Input('current_keyword', 'data'),
+)
+def update_top_researchers_widget(current_keyword):
+    researchers = query_researchers_for_keyword(current_keyword)
+
+    if researchers is None:
+        return []
+    else:
+        children = []
+        for r in researchers:
+            print(f"{r=}")
+            # r = {
+            #     'id': 288,
+            #     'name': 'Michael Rubenstein',
+            #     'position': 'Assistant Professor of Computer Science',
+            #     'researchInterest': 'The Lisa Wissner-Slivka and Benjamin Slivka Professor in Computer Science',
+            #     'email': None,
+            #     'phone': None,
+            #     'affiliation':
+            #         {
+            #             'id': 6, 'name': 'Northwestern University',
+            #             'photoUrl': 'https://www.northwestern.edu/brand/images/nu-horizontal.jpg'
+            #         },
+            #     'photoUrl': 'https://robotics.northwestern.edu/images/people/faculty/rubenstein-michael.jpg',
+            #     'keywords': {'id': 199, 'name': 'algorithms', 'score': 13.6756},
+            #     'publications':
+            #         [
+            #             69434499, 1517064069, 1563547082, 1572286800, 1651492067, 1878418498, 1982636603, 2023850386,
+            #             2030775133, 2097063056, 2102560187, 2106675317, 2116735242, 2121104773, 2133846610, 2137941340,
+            #             2139714790, 2143048619, 2153315991, 2154007976, 2167880800, 2167983353, 2473332233, 2563354324,
+            #             2564629425, 2621081140, 2771764619, 2773163868, 2790555425, 2891489068, 2892256368, 2913084927,
+            #             2915064205, 2934528086, 3000667810, 3001424831, 3003817311, 3008404222, 3038007248, 3043048731,
+            #             3043258647, 3089977517
+            #         ],
+            # }
+            id = r["id"]
+
+            # keyword_tags = []
+            # for k in r.get("keywords", []):
+            #     keyword_name = k["name"]
+
+            #     if keyword_name == current_keyword:
+            #         tag_background = 'rgba(0, 0, 255, 0.2)'
+            #     else:
+            #         tag_background = 'rgba(0, 0, 0, 0.1)'
+
+            #     tag = html.Div(
+            #         style={
+            #             'fontSize': '0.8em',
+            #             'backgroundColor': tag_background,
+            #             'color': 'rgba(0, 0, 0, 0.5)',
+            #         },
+            #         children=keyword_name,
+            #     )
+            #     keyword_tags.append(tag)
+
+            children.append(
+                dbc.Col(
+                    width=1,
+                    children=[
+                        dbc.Card(
+                            [
+                                dbc.CardImg(
+                                    style={
+                                        "objectFit": "cover",
+                                        "height": "160px",
+                                    },
+                                    src=r['photoUrl'],
+                                    top=True,
+                                ),
+                                dbc.CardBody(
+                                    [
+                                        html.H4(r["name"], className="card-title"),
+                                        html.Div(f"{r['position']}", className="card-text")
+                                        if r['position'] is not None else None,
+                                        html.Div(
+                                            style={
+                                                'fontSize': '0.8em',
+                                                'color': 'rgba(0, 0, 0, 0.5)',
+                                            },
+                                            children=[
+                                                html.Div(f"{r['affiliation']['name']}"),
+                                                html.Div(f"{r['email']}") if r['email'] is not None else None,
+                                                html.Div(f"Score {r['keywords']['score']}"),
+                                            ]
+                                        ),
+                                        dbc.Button(
+                                            id={
+                                                'type': 'researcher_add_to_list_button',
+                                                'index': id,
                                             },
                                             color='primary',
                                             children='Add to list',
@@ -637,16 +782,9 @@ def make_widgets():
                 height=None,
                 children=[html.Div(id="top_publications_widget")],
             ),
-            # make_widget(
-            #     title="Top publications",
-            #     badges=["MongoDB"],
-            #     subtitle="The most-cited publications given the keyword.",
-            #     width=12,
-            #     children=[dash_table.DataTable(id="publications_for_keyword")],
-            # ),
             make_widget(
                 title="Your reference publications list",
-                badges=["MongoDB", "MySQL", "backend-updating"],
+                badges=["MongoDB", "backend-updating"],
                 subtitle="Add or important papers you should read based on your selections.",
                 width=12,
                 height=None,
@@ -664,17 +802,32 @@ def make_widgets():
             make_widget(
                 title="Top researchers",
                 badges=["MongoDB", "pattern-matching callbacks"],
-                subtitle="The most-cited researchers given the keyword.",
-                width=12,
-                children=[dash_table.DataTable(id="researchers_for_keyword")],
-            ),
-            make_widget(
-                title="Your next collaborators",
-                badges=["MongoDB", "MySQL", "backend-updating"],
-                subtitle="Add or delete your researchers you want to work with.",
+                subtitle="The researchers that have the highest score on the keyword.",
                 width=12,
                 height=None,
-                children=[],
+                children=[html.Div(id="top_researchers_widget")],
+            ),
+            make_widget(
+                title="Your researchers list",
+                badges=["MongoDB", "backend-updating"],
+                subtitle="Add or potential collaborators you might want to work with",
+                width=12,
+                height=None,
+                children=[
+                    dbc.Button(
+                        id="button_delete_all_researchers",
+                        color='primary',
+                        children='Delete all researchers',
+                    ),
+                    dash_table.DataTable(
+                        id="researcher_list",
+                        columns=[
+                            {"name": "id", "id": "id"},
+                            {"name": "name", "id": "name"},
+                            {"name": "position", "id": "position"},
+                        ],
+                    ),
+                ],
             ),
         ]
     )
