@@ -156,34 +156,18 @@ def make_stores():
     ])
 
 
-def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
-    radio_by = dcc.RadioItems(
-        id='radio_by_most_popular_keywords',
-        options=['num_citations', 'num_publications'],
-        value='num_citations',
-        inline=False,
-    )
-    graph = dcc.Graph(id="figure_most_popular_keywords")
-    widget = make_widget(
-        title="Top keywords",
-        badges=["MySQL", "indexing", "views", "cached results", "dash stores", "click data"],
-        subtitle="Keywords that have accumulated the most number of citations over all years",
-        width=6,
-        children=[radio_by, graph],
-    )
-    return widget
-
-
-# @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
 def query_related_keywords(current_keyword):
     nodes, relationships = neo4j.query_graph(
         f'MATCH p = (:KEYWORD {{name: "{current_keyword}"}})-[:LABEL_BY*..2]-(:KEYWORD) RETURN p LIMIT 15'
     )
 
+    print(f"{current_keyword=}")
     vertices = []
     for n in nodes:
         node_id = n.get("id")
         node_label = n.get("name") if ("KEYWORD" in n.labels) else n.get("title")
+        print(f"{node_label=}")
+        print(f"{(node_label == current_keyword)=}")
         if node_label == current_keyword:
             node_color = "lightgreen"
         elif "KEYWORD" in n.labels:
@@ -198,6 +182,8 @@ def query_related_keywords(current_keyword):
             "style": {"background-color": node_color},
         }
         vertices.append(vertex)
+
+    print(f"{vertices=}")
 
     edges = [{"data": {
         "source": r.start_node.get("id"),
@@ -226,46 +212,35 @@ def query_publications_for_keyword(current_keyword):
     if len(res) == 0:
         return None
     else:
-        print(res)
         df = pd.DataFrame(res)
         df['keywords'] = df['keywords'].apply(lambda x: str(x))
         return df
 
 
-def make_widget_related_keywords():
-    # radio_by = dcc.RadioItems(
-    #     id='radio_by_most_popular_keywords',
-    #     options=['num_citations', 'num_publications'],
-    #     value='num_citations',
-    #     inline=False,
-    # )
-    # graph = dcc.Graph(id="figure_most_popular_keywords")
-    widget = make_widget(
-        title="Related keywords",
-        badges=["Neo4J", "Cytoscape"],
-        subtitle="Click a keyword on the first panel, and see what are the common related keywords.",
-        width=6,
-        children=[
-            cyto.Cytoscape(
-                id='related_keywords',
-                style={'width': '100%', 'height': '400px'},
-                elements=[],
-                layout={'name': 'cose'},
-            ),
-        ],
+def query_researchers_for_keyword(current_keyword):
+    res = mongodb.query(
+        lambda db: db.faculty.aggregate(
+            [
+                {
+                    "$match": {"keywords.name": current_keyword},
+                },
+                {
+                    "$project": {"_id": 0},
+                },
+                # {"$sort": {"numCitations": -1}},
+                {"$limit": 20},
+            ]
+        )
     )
-    return widget
 
-
-def make_widget_publications_for_keyword():
-    widget = make_widget(
-        title="Top publications",
-        badges=["MongoDB"],
-        subtitle="The most-cited publications given the keyword.",
-        width=12,
-        children=[dash_table.DataTable(id="publications_for_keyword")],
-    )
-    return widget
+    if len(res) == 0:
+        return None
+    else:
+        df = pd.DataFrame(res)
+        df['affiliation'] = df['affiliation'].apply(lambda x: str(x))
+        df['publications'] = df['publications'].apply(lambda x: str(x))
+        df['keywords'] = df['keywords'].apply(lambda x: str(x))
+        return df
 
 
 @app.callback(
@@ -280,7 +255,23 @@ def update_publications_for_keyword(current_keyword):
 
     if df is not None:
         outputs = df_to_dash_data_table(df)
-        print(f"{outputs=}")
+        return outputs
+    else:
+        return [[], []]
+
+
+@app.callback(
+    [
+        Output('researchers_for_keyword', 'data'),
+        Output('researchers_for_keyword', 'columns'),
+    ],
+    Input('current_keyword', 'data'),
+)
+def update_researchers_for_keyword(current_keyword):
+    df = query_researchers_for_keyword(current_keyword)
+
+    if df is not None:
+        outputs = df_to_dash_data_table(df)
         return outputs
     else:
         return [[], []]
@@ -326,7 +317,7 @@ def display_click_data(data1, data2):
         else:
             label = None
 
-    return label
+    return label or "algorithms"
 
 
 @app.callback(
@@ -352,24 +343,6 @@ colors = {
     'text': '#212121',
     'text1': '#000000',
 }
-
-# assume you have a "long-form" data frame
-# see https://plotly.com/python/px-arguments/ for more options
-df = pd.DataFrame(
-    {
-        "Fruit": ["Apples", "Oranges", "Bananas", "Apples", "Oranges", "Bananas"], "Amount": [4, 1, 2, 2, 4, 5],
-        "City": ["SF", "SF", "SF", "Montreal", "Montreal", "Montreal"]
-    }
-)
-
-fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
-
-fig.update_layout(
-    plot_bgcolor=colors['background'],
-    paper_bgcolor=colors['background'],
-    font_color=colors['text'],
-)
-
 
 def make_header():
     return dbc.Row(
@@ -446,12 +419,63 @@ def make_widgets():
             'overflow': 'auto',
         },
         children=[
-            make_widget_most_popular_keywords(),
-            make_widget_related_keywords(),
-            make_widget_publications_for_keyword(),
-            make_widget(children=[]),
-            make_widget(children=[]),
-            make_widget(children=[]),
+            make_widget(
+                title="Top keywords",
+                badges=["MySQL", "input from user", "indexing", "views", "cached results", "dash stores", "click data"],
+                subtitle="Keywords that have accumulated the most number of citations over all years",
+                width=6,
+                children=[
+                    dcc.RadioItems(
+                        id='radio_by_most_popular_keywords',
+                        options=['num_citations', 'num_publications'],
+                        value='num_citations',
+                        inline=False,
+                    ),
+                    dcc.Graph(id="figure_most_popular_keywords")
+                ],
+            ),
+            make_widget(
+                title="Related keywords",
+                badges=["Neo4J", "Cytoscape", "input from user"],
+                subtitle="Click a keyword on the first panel, and see what are the common related keywords.",
+                width=6,
+                children=[
+                    cyto.Cytoscape(
+                        id='related_keywords',
+                        style={'width': '100%', 'height': '400px'},
+                        elements=[],
+                        layout={'name': 'cose'},
+                    ),
+                ],
+            ),
+            make_widget(
+                title="Top publications",
+                badges=["MongoDB"],
+                subtitle="The most-cited publications given the keyword.",
+                width=12,
+                children=[dash_table.DataTable(id="publications_for_keyword")],
+            ),
+            make_widget(
+                title="Top researchers",
+                badges=["MongoDB"],
+                subtitle="The most-cited researchers given the keyword.",
+                width=12,
+                children=[dash_table.DataTable(id="researchers_for_keyword")],
+            ),
+            make_widget(
+                title="Your next research topics",
+                badges=["updating"],
+                subtitle="Add or delete keywords you would like to work on.",
+                width=6,
+                children=[],
+            ),
+            make_widget(
+                title="Your next collaborators",
+                badges=["updating"],
+                subtitle="Add or delete your researchers you want to work with.",
+                width=6,
+                children=[],
+            ),
         ]
     )
 
