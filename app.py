@@ -58,7 +58,10 @@ class MongoDB:
 
     def query(self, query_fn):
         cursor = query_fn(self._db)
-        res = list(cursor)
+        try:
+            res = list(cursor)
+        except Exception:
+            res = cursor
         return res
 
 
@@ -193,6 +196,65 @@ def query_researchers_for_keyword(current_keyword):
         return df
 
 
+def get_publication_by_id(publication_id):
+    res = mongodb.query(
+        lambda db: db.publications.aggregate([
+            {
+                "$match": {"id": publication_id},
+            },
+            {
+                "$project": {"_id": 0},
+            },
+            {"$limit": 1},
+        ])
+    )
+
+    if len(res) == 0:
+        return None
+    else:
+        return res[0]
+
+
+def get_current_publication_list_from_backend():
+    res = mongodb.query(
+        lambda db: db.publication_list.aggregate(
+            [
+                # {
+                #     "$match": {"id": publication_id},
+                # },
+                {
+                    "$project": {"_id": 0, "keywords": 0},
+                },
+                # {"$limit": 1},
+            ]
+        )
+    )
+
+    if len(res) == 0:
+        return None
+    else:
+        return res
+
+
+def get_faculty_by_id(faculty_id):
+    res = mongodb.query(
+        lambda db: db.faculty.aggregate([
+            {
+                "$match": {"id": faculty_id},
+            },
+            {
+                "$project": {"_id": 0},
+            },
+            {"$limit": 1},
+        ])
+    )
+
+    if len(res) == 0:
+        return None
+    else:
+        return res[0]
+
+
 # @app.callback(
 #     [
 #         Output('publications_for_keyword', 'data'),
@@ -302,6 +364,32 @@ def update_by_publication_add_to_list_button(n_clicks):
     except Exception:
         id_str = None
     return id_str
+
+
+@app.callback(
+    Output('publication_list', 'data'),
+    [
+        Input('current_publication', 'data'),
+        Input('button_delete_all_publications', 'n_clicks'),
+    ],
+)
+def update_publication_list(current_publication, n_clicks):
+    print(f"{current_publication=}")
+    triggered = dash.callback_context.triggered[0]
+    print(f"{triggered=}")
+
+    if triggered['prop_id'] == 'button_delete_all_publications.n_clicks':
+        res = mongodb.query(lambda db: db.publication_list.delete_many({}))
+    elif current_publication is not None and triggered is not None:
+        publication = get_publication_by_id(current_publication)
+        print(publication)
+        res = mongodb.query(lambda db: db.publication_list.insert_one(publication))
+        print(f"{res=}")
+
+    publication_list_data = get_current_publication_list_from_backend()
+    print(f"{publication_list_data=}")
+
+    return publication_list_data
 
 
 # @app.callback(
@@ -557,6 +645,23 @@ def make_widgets():
             #     children=[dash_table.DataTable(id="publications_for_keyword")],
             # ),
             make_widget(
+                title="Your reference publications list",
+                badges=["MongoDB", "MySQL", "backend-updating"],
+                subtitle="Add or important papers you should read based on your selections.",
+                width=12,
+                height=None,
+                children=[
+                    dbc.Button(
+                        id="button_delete_all_publications",
+                        color='primary',
+                        children='Delete all publications',
+                    ),
+                    dash_table.DataTable(
+                        id="publication_list", columns=[{"name": "id", "id": "id"}, {"name": "title", "id": "title"}]
+                    ),
+                ],
+            ),
+            make_widget(
                 title="Top researchers",
                 badges=["MongoDB", "pattern-matching callbacks"],
                 subtitle="The most-cited researchers given the keyword.",
@@ -564,17 +669,11 @@ def make_widgets():
                 children=[dash_table.DataTable(id="researchers_for_keyword")],
             ),
             make_widget(
-                title="Your next research topics",
-                badges=["updating"],
-                subtitle="Add or delete keywords you would like to work on.",
-                width=6,
-                children=[],
-            ),
-            make_widget(
                 title="Your next collaborators",
-                badges=["updating"],
+                badges=["MongoDB", "MySQL", "backend-updating"],
                 subtitle="Add or delete your researchers you want to work with.",
-                width=6,
+                width=12,
+                height=None,
                 children=[],
             ),
         ]
