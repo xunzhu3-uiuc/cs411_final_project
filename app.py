@@ -145,8 +145,26 @@ def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
     graph = dcc.Graph(id="figure_most_popular_keywords")
     widget = make_widget(
         title="Top keywords",
+        badges=["MySQL", "views", "cached results", "dash stores", "click data"],
         subtitle="Keywords that have accumulated the most number of citations over all years",
         children=[radio_by, graph],
+    )
+    return widget
+
+
+def make_widget_related_keywords():
+    # radio_by = dcc.RadioItems(
+    #     id='radio_by_most_popular_keywords',
+    #     options=['num_citations', 'num_publications'],
+    #     value='num_citations',
+    #     inline=False,
+    # )
+    # graph = dcc.Graph(id="figure_most_popular_keywords")
+    widget = make_widget(
+        title="Related keywords",
+        badges=["Neo4J"],
+        subtitle="Click a keyword on the first panel, and see what are the common related keywords.",
+        children=[],
     )
     return widget
 
@@ -214,7 +232,7 @@ def make_header():
     )
 
 
-def make_widget(title="<title>", subtitle="<subtitle>", children=[]):
+def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[]):
     return dbc.Col(
         style={
             'display': 'flex',
@@ -226,6 +244,14 @@ def make_widget(title="<title>", subtitle="<subtitle>", children=[]):
         width=4,
         children=[
             html.H4(title),
+            html.Div(
+                style={
+                    'display': 'flex',
+                    'flexDirection': 'row',
+                    'gap': '4px',
+                },
+                children=[dbc.Badge(b) for b in badges],
+            ),
             html.P(subtitle),
             dbc.Card(
                 style={
@@ -251,10 +277,7 @@ def make_widgets():
         },
         children=[
             make_widget_most_popular_keywords(),
-            make_widget(
-                title="Hello, World!",
-                children=[dcc.Graph(id='example-graph-2', figure=fig)],
-            ),
+            make_widget_related_keywords(),
             make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
             make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
             make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
