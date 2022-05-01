@@ -2,6 +2,7 @@
 # visit http://127.0.0.1:8050/ in your web browser.
 
 from dash import Dash, dcc, html, dash_table, Input, Output, State, MATCH, ALL
+import json
 import dash
 import plotly.express as px
 import pandas as pd
@@ -295,8 +296,12 @@ def update_related_keywords(current_keyword):
     Input({'type': 'publication_add_to_list_button', 'index': ALL}, 'n_clicks'),
 )
 def update_by_publication_add_to_list_button(n_clicks):
-    print(f"{dash.callback_context.triggered=}")
-    return "algorithms"
+    try:
+        triggered = dash.callback_context.triggered[0]
+        id_str = json.loads(triggered['prop_id'].split(".")[0])["index"]
+    except Exception:
+        id_str = None
+    return id_str
 
 
 # @app.callback(
