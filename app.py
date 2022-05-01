@@ -1,7 +1,7 @@
 # Run this app with `python app.py` and
 # visit http://127.0.0.1:8050/ in your web browser.
 
-from dash import Dash, dcc, html, dash_table, Input, Output
+from dash import Dash, dcc, html, dash_table, Input, Output, State, MATCH, ALL
 import dash
 import plotly.express as px
 import pandas as pd
@@ -100,7 +100,7 @@ def query_most_popular_keywords(num_top=20, by='num_citations'):
 def make_stores():
     return html.Div([
         dcc.Store(id='current_keyword'),
-        dcc.Store(id='selected_publication'),
+        dcc.Store(id='current_publication'),
     ])
 
 
@@ -233,9 +233,9 @@ def update_researchers_for_keyword(current_keyword):
 def make_figure_most_popular_keywords(by='num_citations'):
     df = query_most_popular_keywords(by=by)
     if by == 'num_citations':
-        fig = px.bar(df, x="name", y="total_num_citations", height=300)
+        fig = px.bar(df, x="name", y="total_num_citations", height=280)
     elif by == 'num_publications':
-        fig = px.bar(df, x="name", y="total_num_publications", height=300)
+        fig = px.bar(df, x="name", y="total_num_publications", height=280)
     return fig
 
 
@@ -271,12 +271,12 @@ def display_click_data(data1, data2):
 
 @app.callback(Output('info_text', 'children'), [
     Input('current_keyword', 'data'),
-    Input('selected_publication', 'data'),
+    Input('current_publication', 'data'),
 ])
-def update_info_text(current_keyword, selected_publication):
+def update_info_text(current_keyword, current_publication):
     msg = '\n'.join([
         f"{current_keyword=}",
-        f"{selected_publication=}",
+        f"{current_publication=}",
     ])
     return msg
 
@@ -288,6 +288,15 @@ def update_info_text(current_keyword, selected_publication):
 def update_related_keywords(current_keyword):
     elements = query_related_keywords(current_keyword)
     return elements
+
+
+@app.callback(
+    Output('current_publication', 'data'),
+    Input({'type': 'publication_add_to_list_button', 'index': ALL}, 'n_clicks'),
+)
+def update_by_publication_add_to_list_button(n_clicks):
+    print(f"{dash.callback_context.triggered=}")
+    return "algorithms"
 
 
 # @app.callback(
@@ -330,6 +339,8 @@ def update_top_publications_widget(current_keyword):
             #             {'id': 28214, 'name': 'software package', 'score': 0.226737},
             #         ],
             # }
+            pub_id = pub["id"]
+
             if pub['venue'] is None:
                 venue_div = None
             else:
@@ -383,7 +394,14 @@ def update_top_publications_widget(current_keyword):
                                             },
                                             children=keyword_tags,
                                         ),
-                                        dbc.Button("Add to list", color="primary"),
+                                        dbc.Button(
+                                            id={
+                                                'type': 'publication_add_to_list_button',
+                                                'index': pub_id,
+                                            },
+                                            color='primary',
+                                            children='Add to list',
+                                        ),
                                     ],
                                 ),
                             ]
@@ -486,11 +504,20 @@ def make_widgets():
                 subtitle="Keywords that have accumulated the most number of citations over all years",
                 width=6,
                 children=[
-                    dcc.RadioItems(
-                        id='radio_by_most_popular_keywords',
-                        options=['num_citations', 'num_publications'],
-                        value='num_citations',
-                        inline=False,
+                    html.Div(
+                        style={
+                            "display": 'flex',
+                            'flexDirection': 'row',
+                        },
+                        children=[
+                            "Based on: ",
+                            dcc.RadioItems(
+                                id='radio_by_most_popular_keywords',
+                                options=['num_citations', 'num_publications'],
+                                value='num_citations',
+                                inline=True,
+                            ),
+                        ]
                     ),
                     dcc.Graph(id="figure_most_popular_keywords")
                 ],
@@ -511,7 +538,7 @@ def make_widgets():
             ),
             make_widget(
                 title="Top publications",
-                badges=["MongoDB"],
+                badges=["MongoDB", "pattern-matching callbacks"],
                 subtitle="The most-cited publications given the keyword.",
                 width=12,
                 height=None,
@@ -526,7 +553,7 @@ def make_widgets():
             # ),
             make_widget(
                 title="Top researchers",
-                badges=["MongoDB"],
+                badges=["MongoDB", "pattern-matching callbacks"],
                 subtitle="The most-cited researchers given the keyword.",
                 width=12,
                 children=[dash_table.DataTable(id="researchers_for_keyword")],
