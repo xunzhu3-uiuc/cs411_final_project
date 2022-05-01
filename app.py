@@ -49,59 +49,6 @@ class Neo4J:
         return graph.nodes, graph.relationships
 
 
-# [<Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>
-#  <Node id=524095 labels=frozenset({'PUBLICATION'}) properties={'venue': 'arXiv preprint arXiv:1011.2121', 'year': 2010, 'numCitations': 0, 'id': 'p2952868510', 'title': 'Matching with Couples Revisited'}>
-#  <Node id=13823 labels=frozenset({'KEYWORD'}) properties={'name': 'game', 'id': 'k2586'}>
-#  <Node id=643 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Proceedings of the 2016 Annual Symposium on Computer-Human Interaction in Play Companion Extended Abstracts', 'year': 2016, 'numCitations': 0, 'id': 'p2530829023', 'title': 'Treehouse Dreams: A Game-Based Method for Eliciting Interview Data from Children'}>
-#  <Node id=572959 labels=frozenset({'PUBLICATION'}) properties={'venue': 'nan', 'year': 2020, 'numCitations': 0, 'id': 'p3109138948', 'title': 'METHOD AND APPARATUS FOR REPLACING DATA FROM NEAR TO FAR MEMORY OVER A SLOW INTERCONNECT FOR OVERSUBSCRIBED IRREGULAR APPLICATIONS'}>
-#  <Node id=12097 labels=frozenset({'KEYWORD'}) properties={'name': 'memories', 'id': 'k49485'}>
-#  <Node id=644 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Proceedings of the 14th ACM/IEEE Symposium on Embedded Systems for Real-Time Multimedia', 'year': 2016, 'numCitations': 3, 'id': 'p2530832681', 'title': 'On Detecting and Using Memory Phases in Multimedia Systems'}>
-#  <Node id=151253 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Neuroinformatics', 'year': 2011, 'numCitations': 121, 'id': 'p2157408013', 'title': 'Automated Reconstruction of Neuronal Morphology Based on Local Geometrical and Global Structural Models'}>
-#  <Node id=69492 labels=frozenset({'KEYWORD'}) properties={'name': 'structural models', 'id': 'k52826'}>
-#  <Node id=645 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Journal of Abnormal Psychology', 'year': 2016, 'numCitations': 17, 'id': 'p2530843363', 'title': 'A comparison and integration of structural models of depression and anxiety in a clinical sample: Support for and validation of the tri-level model'}>
-#  <Node id=496938 labels=frozenset({'PUBLICATION'}) properties={'venue': 'MBIA/MFCA@MICCAI', 'year': 2019, 'numCitations': 0, 'id': 'p2979897994', 'title': 'Species-Preserved Structural Connections Revealed by Sparse Tensor CCA'}>
-#  <Node id=76019 labels=frozenset({'KEYWORD'}) properties={'name': 'canonical correlation analysis', 'id': 'k1628'}>
-#  <Node id=646 labels=frozenset({'PUBLICATION'}) properties={'venue': 'arXiv preprint arXiv:1610.03454', 'year': 2016, 'numCitations': 77, 'id': 'p2530846021', 'title': 'Deep Variational Canonical Correlation Analysis'}>
-#  <Node id=431587 labels=frozenset({'PUBLICATION'}) properties={'venue': 'IGARSS 2018 - 2018 IEEE International Geoscience and Remote Sensing Symposium', 'year': 2018, 'numCitations': 0, 'id': 'p2901282489', 'title': 'Deterministic Cramer-Rao Bound for Scanning Radar Sensing'}>
-#  <Node id=15944 labels=frozenset({'KEYWORD'}) properties={'name': 'target', 'id': 'k24731'}>
-#  <Node id=647 labels=frozenset({'PUBLICATION'}) properties={'venue': 'nan', 'year': 2014, 'numCitations': 22, 'id': 'p2530848804', 'title': 'Methods, systems, and media for authenticating users using multiple services'}>
-# ]
-
-# [<Relationship id=4410459 nodes=(
-#     <Node id=524095 labels=frozenset({'PUBLICATION'}) properties={'venue': 'arXiv preprint arXiv:1011.2121', 'year': 2010, 'numCitations': 0, 'id': 'p2952868510', 'title': 'Matching with Couples Revisited'}>
-#     <Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>)
-#  type='LABEL_BY'
-#  properties={'score': 0.00111362}>
-#  <Relationship id=4410460 nodes=(<Node id=524095 labels=frozenset({'PUBLICATION'}) properties={'venue': 'arXiv preprint arXiv:1011.2121', 'year': 2010, 'numCitations': 0, 'id': 'p2952868510', 'title': 'Matching with Couples Revisited'}>
-#  <Node id=13823 labels=frozenset({'KEYWORD'}) properties={'name': 'game', 'id': 'k2586'}>) type='LABEL_BY' properties={'score': 0.0015675}>
-#  <Relationship id=3887232 nodes=(<Node id=643 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Proceedings of the 2016 Annual Symposium on Computer-Human Interaction in Play Companion Extended Abstracts', 'year': 2016, 'numCitations': 0, 'id': 'p2530829023', 'title': 'Treehouse Dreams: A Game-Based Method for Eliciting Interview Data from Children'}>
-#  <Node id=13823 labels=frozenset({'KEYWORD'}) properties={'name': 'game', 'id': 'k2586'}>) type='LABEL_BY' properties={'score': 0.00286448}>
-#  <Relationship id=4450194 nodes=(<Node id=572959 labels=frozenset({'PUBLICATION'}) properties={'venue': 'nan', 'year': 2020, 'numCitations': 0, 'id': 'p3109138948', 'title': 'METHOD AND APPARATUS FOR REPLACING DATA FROM NEAR TO FAR MEMORY OVER A SLOW INTERCONNECT FOR OVERSUBSCRIBED IRREGULAR APPLICATIONS'}>
-#  <Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>) type='LABEL_BY' properties={'score': 0.00240893}>
-#  <Relationship id=4450200 nodes=(<Node id=572959 labels=frozenset({'PUBLICATION'}) properties={'venue': 'nan', 'year': 2020, 'numCitations': 0, 'id': 'p3109138948', 'title': 'METHOD AND APPARATUS FOR REPLACING DATA FROM NEAR TO FAR MEMORY OVER A SLOW INTERCONNECT FOR OVERSUBSCRIBED IRREGULAR APPLICATIONS'}>
-#  <Node id=12097 labels=frozenset({'KEYWORD'}) properties={'name': 'memories', 'id': 'k49485'}>) type='LABEL_BY' properties={'score': 0.315763}>
-#  <Relationship id=3887243 nodes=(<Node id=644 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Proceedings of the 14th ACM/IEEE Symposium on Embedded Systems for Real-Time Multimedia', 'year': 2016, 'numCitations': 3, 'id': 'p2530832681', 'title': 'On Detecting and Using Memory Phases in Multimedia Systems'}>
-#  <Node id=12097 labels=frozenset({'KEYWORD'}) properties={'name': 'memories', 'id': 'k49485'}>) type='LABEL_BY' properties={'score': 0.297633}>
-#  <Relationship id=3773791 nodes=(<Node id=151253 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Neuroinformatics', 'year': 2011, 'numCitations': 121, 'id': 'p2157408013', 'title': 'Automated Reconstruction of Neuronal Morphology Based on Local Geometrical and Global Structural Models'}>
-#  <Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>) type='LABEL_BY' properties={'score': 0.000785571}>
-#  <Relationship id=3773799 nodes=(<Node id=151253 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Neuroinformatics', 'year': 2011, 'numCitations': 121, 'id': 'p2157408013', 'title': 'Automated Reconstruction of Neuronal Morphology Based on Local Geometrical and Global Structural Models'}>
-#  <Node id=69492 labels=frozenset({'KEYWORD'}) properties={'name': 'structural models', 'id': 'k52826'}>) type='LABEL_BY' properties={'score': 0.184492}>
-#  <Relationship id=3887253 nodes=(<Node id=645 labels=frozenset({'PUBLICATION'}) properties={'venue': 'Journal of Abnormal Psychology', 'year': 2016, 'numCitations': 17, 'id': 'p2530843363', 'title': 'A comparison and integration of structural models of depression and anxiety in a clinical sample: Support for and validation of the tri-level model'}>
-#  <Node id=69492 labels=frozenset({'KEYWORD'}) properties={'name': 'structural models', 'id': 'k52826'}>) type='LABEL_BY' properties={'score': 0.305557}>
-#  <Relationship id=4462941 nodes=(<Node id=496938 labels=frozenset({'PUBLICATION'}) properties={'venue': 'MBIA/MFCA@MICCAI', 'year': 2019, 'numCitations': 0, 'id': 'p2979897994', 'title': 'Species-Preserved Structural Connections Revealed by Sparse Tensor CCA'}>
-#  <Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>) type='LABEL_BY' properties={'score': 0.000334525}>
-#  <Relationship id=4462943 nodes=(<Node id=496938 labels=frozenset({'PUBLICATION'}) properties={'venue': 'MBIA/MFCA@MICCAI', 'year': 2019, 'numCitations': 0, 'id': 'p2979897994', 'title': 'Species-Preserved Structural Connections Revealed by Sparse Tensor CCA'}>
-#  <Node id=76019 labels=frozenset({'KEYWORD'}) properties={'name': 'canonical correlation analysis', 'id': 'k1628'}>) type='LABEL_BY' properties={'score': 0.100949}>
-#  <Relationship id=3887256 nodes=(<Node id=646 labels=frozenset({'PUBLICATION'}) properties={'venue': 'arXiv preprint arXiv:1610.03454', 'year': 2016, 'numCitations': 77, 'id': 'p2530846021', 'title': 'Deep Variational Canonical Correlation Analysis'}>
-#  <Node id=76019 labels=frozenset({'KEYWORD'}) properties={'name': 'canonical correlation analysis', 'id': 'k1628'}>) type='LABEL_BY' properties={'score': 0.352635}>
-#  <Relationship id=4547998 nodes=(<Node id=431587 labels=frozenset({'PUBLICATION'}) properties={'venue': 'IGARSS 2018 - 2018 IEEE International Geoscience and Remote Sensing Symposium', 'year': 2018, 'numCitations': 0, 'id': 'p2901282489', 'title': 'Deterministic Cramer-Rao Bound for Scanning Radar Sensing'}>
-#  <Node id=2960 labels=frozenset({'KEYWORD'}) properties={'name': 'algorithm', 'id': 'k189'}>) type='LABEL_BY' properties={'score': 0.00171165}>
-#  <Relationship id=4548963 nodes=(<Node id=431587 labels=frozenset({'PUBLICATION'}) properties={'venue': 'IGARSS 2018 - 2018 IEEE International Geoscience and Remote Sensing Symposium', 'year': 2018, 'numCitations': 0, 'id': 'p2901282489', 'title': 'Deterministic Cramer-Rao Bound for Scanning Radar Sensing'}>
-#  <Node id=15944 labels=frozenset({'KEYWORD'}) properties={'name': 'target', 'id': 'k24731'}>) type='LABEL_BY' properties={'score': 0.00234256}>
-#  <Relationship id=3887268 nodes=(<Node id=647 labels=frozenset({'PUBLICATION'}) properties={'venue': 'nan', 'year': 2014, 'numCitations': 22, 'id': 'p2530848804', 'title': 'Methods, systems, and media for authenticating users using multiple services'}>
-#  <Node id=15944 labels=frozenset({'KEYWORD'}) properties={'name': 'target', 'id': 'k24731'}>) type='LABEL_BY' properties={'score': 0.00247541}>]
-
-
 class MongoDB:
 
     def __init__(self):
@@ -153,6 +100,7 @@ def query_most_popular_keywords(num_top=20, by='num_citations'):
 def make_stores():
     return html.Div([
         dcc.Store(id='current_keyword'),
+        dcc.Store(id='selected_publication'),
     ])
 
 
@@ -161,13 +109,13 @@ def query_related_keywords(current_keyword):
         f'MATCH p = (:KEYWORD {{name: "{current_keyword}"}})-[:LABEL_BY*..2]-(:KEYWORD) RETURN p LIMIT 15'
     )
 
-    print(f"{current_keyword=}")
+    # print(f"{current_keyword=}")
     vertices = []
     for n in nodes:
         node_id = n.get("id")
         node_label = n.get("name") if ("KEYWORD" in n.labels) else n.get("title")
-        print(f"{node_label=}")
-        print(f"{(node_label == current_keyword)=}")
+        # print(f"{node_label=}")
+        # print(f"{(node_label == current_keyword)=}")
         if node_label == current_keyword:
             node_color = "lightgreen"
         elif "KEYWORD" in n.labels:
@@ -183,7 +131,7 @@ def query_related_keywords(current_keyword):
         }
         vertices.append(vertex)
 
-    print(f"{vertices=}")
+    # print(f"{vertices=}")
 
     edges = [{"data": {
         "source": r.start_node.get("id"),
@@ -212,9 +160,10 @@ def query_publications_for_keyword(current_keyword):
     if len(res) == 0:
         return None
     else:
-        df = pd.DataFrame(res)
-        df['keywords'] = df['keywords'].apply(lambda x: str(x))
-        return df
+        return res
+        # df = pd.DataFrame(res)
+        # df['keywords'] = df['keywords'].apply(lambda x: str(x))
+        # return df
 
 
 def query_researchers_for_keyword(current_keyword):
@@ -243,21 +192,21 @@ def query_researchers_for_keyword(current_keyword):
         return df
 
 
-@app.callback(
-    [
-        Output('publications_for_keyword', 'data'),
-        Output('publications_for_keyword', 'columns'),
-    ],
-    Input('current_keyword', 'data'),
-)
-def update_publications_for_keyword(current_keyword):
-    df = query_publications_for_keyword(current_keyword)
+# @app.callback(
+#     [
+#         Output('publications_for_keyword', 'data'),
+#         Output('publications_for_keyword', 'columns'),
+#     ],
+#     Input('current_keyword', 'data'),
+# )
+# def update_publications_for_keyword(current_keyword):
+#     df = query_publications_for_keyword(current_keyword)
 
-    if df is not None:
-        outputs = df_to_dash_data_table(df)
-        return outputs
-    else:
-        return [[], []]
+#     if df is not None:
+#         outputs = df_to_dash_data_table(df)
+#         return outputs
+#     else:
+#         return [[], []]
 
 
 @app.callback(
@@ -278,8 +227,8 @@ def update_researchers_for_keyword(current_keyword):
 
 
 @app.callback(
-    Output(component_id='figure_most_popular_keywords', component_property='figure'),
-    Input(component_id='radio_by_most_popular_keywords', component_property='value'),
+    Output('figure_most_popular_keywords', 'figure'),
+    Input('radio_by_most_popular_keywords', 'value'),
 )
 def make_figure_most_popular_keywords(by='num_citations'):
     df = query_most_popular_keywords(by=by)
@@ -320,21 +269,138 @@ def display_click_data(data1, data2):
     return label or "algorithms"
 
 
-@app.callback(
-    Output('current_keyword_text', 'children'),
+@app.callback(Output('info_text', 'children'), [
     Input('current_keyword', 'data'),
-)
-def update_current_keyword_text(current_keyword):
-    return f"{current_keyword=}"
+    Input('selected_publication', 'data'),
+])
+def update_info_text(current_keyword, selected_publication):
+    msg = '\n'.join([
+        f"{current_keyword=}",
+        f"{selected_publication=}",
+    ])
+    return msg
 
 
 @app.callback(
-    Output(component_id='related_keywords', component_property='elements'),
-    Input(component_id='current_keyword', component_property='data'),
+    Output('related_keywords', 'elements'),
+    Input('current_keyword', 'data'),
 )
 def update_related_keywords(current_keyword):
     elements = query_related_keywords(current_keyword)
     return elements
+
+
+# @app.callback(
+#     Output('selected_publication', 'data'),
+#     Input('publications_for_keyword', 'active_cell'),
+# )
+# def update_selected_publication(active_cell):
+#     print(active_cell)
+#     return None
+
+
+@app.callback(
+    Output('top_publications_widget', 'children'),
+    Input('current_keyword', 'data'),
+)
+def update_top_publications_widget(current_keyword):
+    publications = query_publications_for_keyword(current_keyword)
+
+    if publications is None:
+        return []
+    else:
+        children = []
+        for pub in publications:
+            # pub = {
+            #     'id': 2109184569,
+            #     'title': 'PHENIX: building new software for automated crystallographic structure determination',
+            #     'venue': 'Acta Crystallographica Section D-biological Crystallography',
+            #     'year': 2002,
+            #     'numCitations': 4227,
+            #     'keywords':
+            #         [
+            #             {'id': 199, 'name': 'algorithms', 'score': 0.00218301},
+            #             {'id': 1198, 'name': 'databases', 'score': 0.00861767},
+            #             {'id': 2841, 'name': 'challenges', 'score': 0.00203716},
+            #             {'id': 2871, 'name': 'python', 'score': 0.186769},
+            #             {'id': 6354, 'name': 'genomics', 'score': 0.347225},
+            #             {'id': 8370, 'name': 'protein', 'score': 0.0038914},
+            #             {'id': 11437, 'name': 'expert', 'score': 0.0861387},
+            #             {'id': 19259, 'name': 'projects', 'score': 0.00321668},
+            #             {'id': 28214, 'name': 'software package', 'score': 0.226737},
+            #         ],
+            # }
+            if pub['venue'] is None:
+                venue_div = None
+            else:
+                venue_div = html.Div(f"{pub['venue']}", className="card-text")
+
+            keyword_tags = []
+            for k in pub.get("keywords", []):
+                keyword_name = k["name"]
+
+                if keyword_name == current_keyword:
+                    tag_background = 'rgba(0, 0, 255, 0.2)'
+                else:
+                    tag_background = 'rgba(0, 0, 0, 0.1)'
+
+                tag = html.Div(
+                    style={
+                        'fontSize': '0.8em',
+                        'backgroundColor': tag_background,
+                        'color': 'rgba(0, 0, 0, 0.5)',
+                    },
+                    children=keyword_name,
+                )
+                keyword_tags.append(tag)
+
+            children.append(
+                dbc.Col(
+                    width=3,
+                    children=[
+                        dbc.Card(
+                            [
+                                dbc.CardBody(
+                                    [
+                                        html.H4(pub["title"], className="card-title"),
+                                        venue_div,
+                                        html.Div(
+                                            style={
+                                                'fontSize': '0.8em',
+                                                'color': 'rgba(0, 0, 0, 0.5)',
+                                            },
+                                            className="card-text",
+                                            children=f"Published in year {pub['year']} | Cited {pub['numCitations']} times",
+                                        ),
+                                        html.Div(
+                                            style={
+                                                'width': '100%',
+                                                'marginBottom': '8px',
+                                                'display': 'flex',
+                                                'flexDirection': 'row',
+                                                'flexWrap': 'wrap',
+                                                'gap': '4px',
+                                            },
+                                            children=keyword_tags,
+                                        ),
+                                        dbc.Button("Add to list", color="primary"),
+                                    ],
+                                ),
+                            ]
+                        )
+                    ]
+                )
+            )
+        return html.Div(
+            style={
+                'width': '100%',
+                'display': 'flex',
+                'flexDirection': 'row',
+                'margin': '16px',
+                'gap': '16px',
+            },
+            children=children,
+        )
 
 
 colors = {
@@ -343,6 +409,7 @@ colors = {
     'text': '#212121',
     'text1': '#000000',
 }
+
 
 def make_header():
     return dbc.Row(
@@ -369,19 +436,19 @@ def make_header():
             dbc.Col(
                 style={'border': '1px solid rgba(0, 0, 0, 0.2)'},
                 width=8,
-                children=[html.P(id="current_keyword_text")],
+                children=[html.Pre(id='info_text')],
             )
         ]
     )
 
 
-def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[], width=4):
+def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[], width=4, height='450px'):
     return dbc.Col(
         style={
             'display': 'flex',
             'flexDirection': 'column',
             'overflow': 'hidden',
-            'height': '450px',
+            'height': height,
             'padding': '16px',
         },
         width=width,
@@ -404,12 +471,6 @@ def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[], 
             ),
         ],
     )
-
-
-placeholder_box = dbc.Col(
-    width=6,
-    children=["HELLO!"],
-)
 
 
 def make_widgets():
@@ -453,8 +514,16 @@ def make_widgets():
                 badges=["MongoDB"],
                 subtitle="The most-cited publications given the keyword.",
                 width=12,
-                children=[dash_table.DataTable(id="publications_for_keyword")],
+                height=None,
+                children=[html.Div(id="top_publications_widget")],
             ),
+            # make_widget(
+            #     title="Top publications",
+            #     badges=["MongoDB"],
+            #     subtitle="The most-cited publications given the keyword.",
+            #     width=12,
+            #     children=[dash_table.DataTable(id="publications_for_keyword")],
+            # ),
             make_widget(
                 title="Top researchers",
                 badges=["MongoDB"],
