@@ -110,8 +110,8 @@ class MongoDB:
 
     def query(self, query_fn):
         cursor = query_fn(self._db)
-        df = pd.DataFrame(list(cursor))
-        return df
+        res = list(cursor)
+        return res
 
 
 class MySQL:
@@ -168,6 +168,7 @@ def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
         title="Top keywords",
         badges=["MySQL", "indexing", "views", "cached results", "dash stores", "click data"],
         subtitle="Keywords that have accumulated the most number of citations over all years",
+        width=6,
         children=[radio_by, graph],
     )
     return widget
@@ -186,9 +187,9 @@ def query_related_keywords(current_keyword):
         if node_label == current_keyword:
             node_color = "lightgreen"
         elif "KEYWORD" in n.labels:
-            node_color = "red"
-        else:
             node_color = "blue"
+        else:
+            node_color = "red"
         vertex = {
             "data": {
                 "id": node_id,
@@ -206,6 +207,31 @@ def query_related_keywords(current_keyword):
     return vertices + edges
 
 
+def query_publications_for_keyword(current_keyword):
+    res = mongodb.query(
+        lambda db: db.publications.aggregate(
+            [
+                {
+                    "$match": {"keywords.name": current_keyword},
+                },
+                {
+                    "$project": {"_id": 0},
+                },
+                {"$sort": {"numCitations": -1}},
+                {"$limit": 20},
+            ]
+        )
+    )
+
+    if len(res) == 0:
+        return None
+    else:
+        print(res)
+        df = pd.DataFrame(res)
+        df['keywords'] = df['keywords'].apply(lambda x: str(x))
+        return df
+
+
 def make_widget_related_keywords():
     # radio_by = dcc.RadioItems(
     #     id='radio_by_most_popular_keywords',
@@ -218,6 +244,7 @@ def make_widget_related_keywords():
         title="Related keywords",
         badges=["Neo4J", "Cytoscape"],
         subtitle="Click a keyword on the first panel, and see what are the common related keywords.",
+        width=6,
         children=[
             cyto.Cytoscape(
                 id='related_keywords',
@@ -228,6 +255,35 @@ def make_widget_related_keywords():
         ],
     )
     return widget
+
+
+def make_widget_publications_for_keyword():
+    widget = make_widget(
+        title="Top publications",
+        badges=["MongoDB"],
+        subtitle="The most-cited publications given the keyword.",
+        width=12,
+        children=[dash_table.DataTable(id="publications_for_keyword")],
+    )
+    return widget
+
+
+@app.callback(
+    [
+        Output('publications_for_keyword', 'data'),
+        Output('publications_for_keyword', 'columns'),
+    ],
+    Input('current_keyword', 'data'),
+)
+def update_publications_for_keyword(current_keyword):
+    df = query_publications_for_keyword(current_keyword)
+
+    if df is not None:
+        outputs = df_to_dash_data_table(df)
+        print(f"{outputs=}")
+        return outputs
+    else:
+        return [[], []]
 
 
 @app.callback(
@@ -290,11 +346,6 @@ def update_related_keywords(current_keyword):
     return elements
 
 
-df_mongodb = mongodb.query(
-    lambda db: db.faculty.
-    aggregate([{"$match": {"position": "Assistant Professor"}}, {"$project": {"_id": 0, "name": 1, "email": 1, "phone": 1}}])
-)
-
 colors = {
     'background': '#ffffff',
     'background1': '#73e8ff',
@@ -351,7 +402,7 @@ def make_header():
     )
 
 
-def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[]):
+def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[], width=4):
     return dbc.Col(
         style={
             'display': 'flex',
@@ -360,7 +411,7 @@ def make_widget(title="<title>", subtitle="<subtitle>", badges=[], children=[]):
             'height': '450px',
             'padding': '16px',
         },
-        width=4,
+        width=width,
         children=[
             html.H4(title),
             html.Div(
@@ -397,10 +448,10 @@ def make_widgets():
         children=[
             make_widget_most_popular_keywords(),
             make_widget_related_keywords(),
-            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+            make_widget_publications_for_keyword(),
+            make_widget(children=[]),
+            make_widget(children=[]),
+            make_widget(children=[]),
         ]
     )
 
