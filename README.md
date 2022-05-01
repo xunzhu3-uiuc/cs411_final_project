@@ -1,7 +1,7 @@
 Find your next research topic!
 ==============================
 
-TODO: SCREEN_SHOT
+![](screenshot.png)
 
 Purpose
 -------
@@ -14,7 +14,7 @@ work with as collaborators, and which references papers you should read.
 Demo
 ----
 
-TODO: LINK
+https://www.youtube.com/watch?v=vMMlcPMs2Gs
 
 
 Installation

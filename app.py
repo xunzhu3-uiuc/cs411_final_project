@@ -776,7 +776,7 @@ def make_widgets():
             ),
             make_widget(
                 title="Top publications",
-                badges=["MongoDB", "pattern-matching callbacks"],
+                badges=["MongoDB", "input from user", "pattern-matching callbacks"],
                 subtitle="The most-cited publications given the keyword.",
                 width=12,
                 height=None,
@@ -784,7 +784,7 @@ def make_widgets():
             ),
             make_widget(
                 title="Your reference publications list",
-                badges=["MongoDB", "backend-updating"],
+                badges=["MongoDB", "input from user", "backend-updating"],
                 subtitle="Add or important papers you should read based on your selections.",
                 width=12,
                 height=None,
@@ -801,7 +801,7 @@ def make_widgets():
             ),
             make_widget(
                 title="Top researchers",
-                badges=["MongoDB", "pattern-matching callbacks"],
+                badges=["MongoDB", "input from user", "pattern-matching callbacks"],
                 subtitle="The researchers that have the highest score on the keyword.",
                 width=12,
                 height=None,
@@ -809,7 +809,7 @@ def make_widgets():
             ),
             make_widget(
                 title="Your researchers list",
-                badges=["MongoDB", "backend-updating"],
+                badges=["MongoDB", "input from user", "backend-updating"],
                 subtitle="Add or potential collaborators you might want to work with",
                 width=12,
                 height=None,
