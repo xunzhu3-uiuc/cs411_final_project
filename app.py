@@ -2,6 +2,7 @@
 # visit http://127.0.0.1:8050/ in your web browser.
 
 from dash import Dash, dcc, html, dash_table, Input, Output
+import dash
 import plotly.express as px
 import pandas as pd
 from sqlalchemy import create_engine, text
@@ -11,7 +12,7 @@ from flask_caching import Cache
 import dash_bootstrap_components as dbc
 import dash_cytoscape as cyto
 
-CACHE_TIMEOUT_SECONDS = 300
+CACHE_TIMEOUT_SECONDS = 300000
 
 app = Dash(
     name=__name__,
@@ -116,12 +117,11 @@ class MongoDB:
 class MySQL:
 
     def __init__(self):
-        engine = create_engine("mysql+pymysql://xzhu:t817@localhost/AcademicWorld", echo=True, future=True)
-        conn = engine.connect()
-        self._conn = conn
+        self._engine = create_engine("mysql+pymysql://xzhu:t817@localhost/AcademicWorld", echo=True, future=True)
 
     def query(self, query_str, params=[]):
-        result = pd.read_sql(text(query_str), self._conn, params=params)
+        conn = self._engine.connect()
+        result = pd.read_sql(text(query_str), conn, params=params)
         return result
 
 
@@ -150,44 +150,10 @@ def query_most_popular_keywords(num_top=20, by='num_citations'):
         raise ValueError(f"{by=} not recognized.")
 
 
-@app.callback(
-    Output(component_id='figure_most_popular_keywords', component_property='figure'),
-    Input(component_id='radio_by_most_popular_keywords', component_property='value'),
-)
-def make_figure_most_popular_keywords(by='num_citations'):
-    df = query_most_popular_keywords(by=by)
-    print(df)
-    if by == 'num_citations':
-        fig = px.bar(df, x="name", y="total_num_citations", height=300)
-    elif by == 'num_publications':
-        fig = px.bar(df, x="name", y="total_num_publications", height=300)
-    return fig
-
-
 def make_stores():
     return html.Div([
         dcc.Store(id='current_keyword'),
     ])
-
-
-@app.callback(
-    Output('current_keyword', 'data'),
-    Input('figure_most_popular_keywords', 'clickData'),
-)
-def display_click_data(clickData):
-    try:
-        label = clickData['points'][0]['label']
-    except TypeError:
-        label = None
-    return label
-
-
-@app.callback(
-    Output('current_keyword_text', 'children'),
-    Input('current_keyword', 'data'),
-)
-def update_current_keyword_text(current_keyword):
-    return f"{current_keyword=}"
 
 
 def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
@@ -200,7 +166,7 @@ def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
     graph = dcc.Graph(id="figure_most_popular_keywords")
     widget = make_widget(
         title="Top keywords",
-        badges=["MySQL", "views", "cached results", "dash stores", "click data"],
+        badges=["MySQL", "indexing", "views", "cached results", "dash stores", "click data"],
         subtitle="Keywords that have accumulated the most number of citations over all years",
         children=[radio_by, graph],
     )
@@ -210,18 +176,27 @@ def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
 # @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
 def query_related_keywords(current_keyword):
     nodes, relationships = neo4j.query_graph(
-        f'MATCH p = shortestPath((:KEYWORD {{name: "{current_keyword}"}})-[:LABEL_BY*]-(f)) RETURN p LIMIT 5'
+        f'MATCH p = (:KEYWORD {{name: "{current_keyword}"}})-[:LABEL_BY*..2]-(:KEYWORD) RETURN p LIMIT 15'
     )
 
-    vertices = [
-        {
+    vertices = []
+    for n in nodes:
+        node_id = n.get("id")
+        node_label = n.get("name") if ("KEYWORD" in n.labels) else n.get("title")
+        if node_label == current_keyword:
+            node_color = "lightgreen"
+        elif "KEYWORD" in n.labels:
+            node_color = "red"
+        else:
+            node_color = "blue"
+        vertex = {
             "data": {
-                "id": n.get("id"),
-                "label": n.get("name") if ("KEYWORD" in n.labels) else n.get("title"),
+                "id": node_id,
+                "label": node_label,
             },
-            "style": {"background-color": "red" if ("KEYWORD" in n.labels) else "blue"}
-        } for n in nodes
-    ]
+            "style": {"background-color": node_color},
+        }
+        vertices.append(vertex)
 
     edges = [{"data": {
         "source": r.start_node.get("id"),
@@ -247,11 +222,7 @@ def make_widget_related_keywords():
             cyto.Cytoscape(
                 id='related_keywords',
                 style={'width': '100%', 'height': '400px'},
-                elements=[
-                    {'data': {'id': 'ca', 'label': 'Canada'}}, {'data': {'id': 'on', 'label': 'Ontario'}},
-                    {'data': {'id': 'qc', 'label': 'Quebec'}}, {'data': {'source': 'ca', 'target': 'on'}},
-                    {'data': {'source': 'ca', 'target': 'qc'}}
-                ],
+                elements=[],
                 layout={'name': 'cose'},
             ),
         ],
@@ -260,12 +231,62 @@ def make_widget_related_keywords():
 
 
 @app.callback(
+    Output(component_id='figure_most_popular_keywords', component_property='figure'),
+    Input(component_id='radio_by_most_popular_keywords', component_property='value'),
+)
+def make_figure_most_popular_keywords(by='num_citations'):
+    df = query_most_popular_keywords(by=by)
+    if by == 'num_citations':
+        fig = px.bar(df, x="name", y="total_num_citations", height=300)
+    elif by == 'num_publications':
+        fig = px.bar(df, x="name", y="total_num_publications", height=300)
+    return fig
+
+
+@app.callback(
+    Output('current_keyword', 'data'),
+    [
+        Input('figure_most_popular_keywords', 'clickData'),
+        Input('related_keywords', 'tapNodeData'),
+    ],
+)
+def display_click_data(data1, data2):
+    ctx = dash.callback_context
+
+    for event in ctx.triggered:
+        prop_id = event['prop_id']
+        value = event['value']
+
+        if prop_id == 'related_keywords.tapNodeData':
+            try:
+                label = value['label']
+            except TypeError:
+                label = None
+        elif prop_id == 'figure_most_popular_keywords.clickData':
+            try:
+                label = value['points'][0]['label']
+            except TypeError:
+                label = None
+        else:
+            label = None
+
+    return label
+
+
+@app.callback(
+    Output('current_keyword_text', 'children'),
+    Input('current_keyword', 'data'),
+)
+def update_current_keyword_text(current_keyword):
+    return f"{current_keyword=}"
+
+
+@app.callback(
     Output(component_id='related_keywords', component_property='elements'),
     Input(component_id='current_keyword', component_property='data'),
 )
 def update_related_keywords(current_keyword):
     elements = query_related_keywords(current_keyword)
-    print(elements)
     return elements
 
 
