@@ -35,13 +35,11 @@ def df_to_dash_data_table(df):
 
 class Neo4J:
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def __init__(self):
         driver = GraphDatabase.driver("bolt://localhost:7687/academicworld", auth=("neo4j", "t817"))
         session = driver.session(database="academicworld")
         self._session = session
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def query(self, query_str):
         result = self._session.run(query_str)
         df = pd.DataFrame.from_records(result.data())
@@ -50,12 +48,10 @@ class Neo4J:
 
 class MongoDB:
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def __init__(self):
         conn = MongoClient('mongodb://xzhu:t817@localhost:27017/academicworld?authSource=admin')
         self._db = conn['academicworld']
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def query(self, query_fn):
         cursor = query_fn(self._db)
         df = pd.DataFrame(list(cursor))
@@ -64,13 +60,11 @@ class MongoDB:
 
 class MySQL:
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def __init__(self):
         engine = create_engine("mysql+pymysql://xzhu:t817@localhost/AcademicWorld", echo=True, future=True)
         conn = engine.connect()
         self._conn = conn
 
-    @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
     def query(self, query_str, params=[]):
         result = pd.read_sql(text(query_str), self._conn, params=params)
         return result
@@ -79,7 +73,6 @@ class MySQL:
 mysql = MySQL()
 neo4j = Neo4J()
 mongodb = MongoDB()
-", COUNT(DISTINCT p.id) AS total_num_publications"
 
 
 @cache.memoize(timeout=CACHE_TIMEOUT_SECONDS)
@@ -108,8 +101,38 @@ def get_most_popular_keywords(num_top=20, by='num_citations'):
 )
 def make_figure_most_popular_keywords(by='num_citations'):
     df = get_most_popular_keywords(by=by)
-    fig = px.bar(df, x="name", y="total_num_citations", height=300)
+    if by == 'num_citations':
+        fig = px.bar(df, x="name", y="total_num_citations", height=300)
+    elif by == 'num_publications':
+        fig = px.bar(df, x="name", y="total_num_publications", height=300)
     return fig
+
+
+def make_stores():
+    return html.Div([
+        dcc.Store(id='current_keyword'),
+    ])
+
+
+@app.callback(
+    Output('current_keyword', 'data'),
+    Input('figure_most_popular_keywords', 'clickData'),
+)
+def display_click_data(clickData):
+    print(clickData)
+    try:
+        label = clickData['points'][0]['label']
+    except TypeError:
+        label = None
+    return label
+
+
+@app.callback(
+    Output('current_keyword_text', 'children'),
+    Input('current_keyword', 'data'),
+)
+def update_current_keyword_text(current_keyword):
+    return f"{current_keyword=}"
 
 
 def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
@@ -117,7 +140,7 @@ def make_widget_most_popular_keywords(num_top=20, by='num_citations'):
         id='radio_by_most_popular_keywords',
         options=['num_citations', 'num_publications'],
         value='num_citations',
-        inline=True,
+        inline=False,
     )
     graph = dcc.Graph(id="figure_most_popular_keywords")
     widget = make_widget(
@@ -159,28 +182,36 @@ fig.update_layout(
     font_color=colors['text'],
 )
 
-header = html.Div(
-    style={
-        'display': 'flex',
-        'flexDirection': 'column',
-    },
-    children=[
-        html.H1(
-            style={
-                # 'textAlign': 'center',
-                'color': colors['text'],
-            },
-            children='Research idea generator',
-        ),
-        html.Div(
-            style={
-                # 'textAlign': 'center',
-                'color': colors['text'],
-            },
-            children='Find your next research topic, collaborators, and references!',
-        ),
-    ]
-)
+
+def make_header():
+    return dbc.Row(
+        children=[
+            dbc.Col(
+                width=4,
+                children=[
+                    html.H1(
+                        style={
+                            # 'textAlign': 'center',
+                            'color': colors['text'],
+                        },
+                        children='Research idea generator',
+                    ),
+                    html.Div(
+                        style={
+                            # 'textAlign': 'center',
+                            'color': colors['text'],
+                        },
+                        children='Find your next research topic, collaborators, and references!',
+                    ),
+                ],
+            ),
+            dbc.Col(
+                style={'border': '1px solid rgba(0, 0, 0, 0.2)'},
+                width=8,
+                children=[html.P(id="current_keyword_text")],
+            )
+        ]
+    )
 
 
 def make_widget(title="<title>", subtitle="<subtitle>", children=[]):
@@ -211,23 +242,26 @@ placeholder_box = dbc.Col(
     children=["HELLO!"],
 )
 
-widgets = dbc.Row(
-    style={
-        'flex': '1 0 0',
-        'overflow': 'auto',
-    },
-    children=[
-        make_widget_most_popular_keywords(),
-        make_widget(
-            title="Hello, World!",
-            children=[dcc.Graph(id='example-graph-2', figure=fig)],
-        ),
-        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-        make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
-    ]
-)
+
+def make_widgets():
+    return dbc.Row(
+        style={
+            'flex': '1 0 0',
+            'overflow': 'auto',
+        },
+        children=[
+            make_widget_most_popular_keywords(),
+            make_widget(
+                title="Hello, World!",
+                children=[dcc.Graph(id='example-graph-2', figure=fig)],
+            ),
+            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+            make_widget(children=[dash_table.DataTable(*df_to_dash_data_table(df_mongodb))]),
+        ]
+    )
+
 
 app.layout = dbc.Col(
     style={
@@ -241,8 +275,9 @@ app.layout = dbc.Col(
         'overflow': 'hidden',
     },
     children=[
-        header,
-        widgets,
+        make_header(),
+        make_widgets(),
+        make_stores(),
     ]
 )
 
